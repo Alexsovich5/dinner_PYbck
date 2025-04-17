@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.core.security import oauth2_scheme, SECRET_KEY, ALGORITHM
 from app.models.user import User
 
+
 async def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)

@@ -3,18 +3,22 @@ from typing import Optional
 from datetime import datetime
 from app.models.match import MatchStatus
 
+
 class MatchBase(BaseModel):
     recipient_id: int
     restaurant_preference: Optional[str] = None
     proposed_date: Optional[datetime] = None
 
+
 class MatchCreate(MatchBase):
     pass
+
 
 class MatchUpdate(BaseModel):
     status: MatchStatus
     restaurant_preference: Optional[str] = None
     proposed_date: Optional[datetime] = None
+
 
 class Match(MatchBase):
     id: int
