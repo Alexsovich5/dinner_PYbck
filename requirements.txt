@@ -13,3 +13,10 @@ python-jose==3.3.0
 bcrypt==3.2.0
 requests==2.26.0
 aiofiles==0.7.0
+# Testing dependencies
+pytest==7.4.0
+pytest-asyncio==0.21.1
+httpx==0.24.1
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+asgi-lifespan==2.1.0
