@@ -36,7 +36,8 @@ def upgrade():
         unique=True
     )
     # Create profiles table
-    op.create_table('profiles',
+    op.create_table(
+        'profiles',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('full_name', sa.String(), nullable=False),
