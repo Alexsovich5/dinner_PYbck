@@ -53,7 +53,7 @@ async def root():
         "message": "Welcome to the Dinner App API",
         "version": "1.0.0"
     }
-
+``
 
 @app.get("/health")
 async def health_check():
