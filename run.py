@@ -1,9 +1,12 @@
 import uvicorn
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, create_tables
 from app.db.init_db import init_db
 
 
 def main():
+    # Create all database tables first
+    create_tables()
+    
     # Initialize database with test data
     db = SessionLocal()
     try:
