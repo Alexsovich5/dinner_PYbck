@@ -18,7 +18,7 @@ def main():
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=5000,
+        port=5001,  # Using port 5001 instead of 5000 to avoid conflicts
         reload=True,
         log_level="info"
     )
