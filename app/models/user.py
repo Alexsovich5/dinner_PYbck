@@ -3,8 +3,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from app.core.database import Base
-# Import models here to resolve circular dependencies
-from app.models import match  # This helps resolve the circular dependency
 
 
 class User(Base):

@@ -1,7 +1,10 @@
-from pydantic import BaseModel, EmailStr, HttpUrl
-from typing import Optional, List, Dict
-from datetime import datetime
+from pydantic import BaseModel, HttpUrl, validator
+from typing import Optional, List, Union
 from enum import Enum
+
+# Constants for URL prefixes
+HTTP_PREFIX = "http://"
+HTTPS_PREFIX = "https://"
 
 
 class VerificationStatus(str, Enum):
@@ -15,9 +18,9 @@ class ProfileBase(BaseModel):
     bio: Optional[str] = None
     location: Optional[str] = None
     
-    # Photo fields
-    avatar_url: Optional[HttpUrl] = None
-    profile_photos: Optional[List[HttpUrl]] = None
+    # Photo fields - make URLs more flexible by accepting strings
+    avatar_url: Optional[Union[HttpUrl, str]] = None
+    profile_photos: Optional[List[Union[HttpUrl, str]]] = None
     
     # Basic preferences
     cuisine_preferences: Optional[str] = None
@@ -30,8 +33,21 @@ class ProfileBase(BaseModel):
     preferred_group_size: Optional[int] = None
     food_allergies: Optional[str] = None
     special_diets: Optional[str] = None
-    favorite_cuisines: Optional[str] = None
-    price_range: Optional[str] = None
+
+    # Validators to handle string URLs
+    @validator('avatar_url', pre=True)
+    def validate_avatar_url(cls, v):
+        if isinstance(v, str) and v and \
+           not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
+            return f"{HTTPS_PREFIX}{v}"
+        return v
+    
+    @validator('profile_photos', each_item=True, pre=True)
+    def validate_profile_photos(cls, v):
+        if isinstance(v, str) and v and \
+           not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
+            return f"{HTTPS_PREFIX}{v}"
+        return v
 
 
 class ProfileCreate(ProfileBase):
@@ -40,27 +56,11 @@ class ProfileCreate(ProfileBase):
 
 class ProfileUpdate(ProfileBase):
     pass
-
-
-class ProfilePhoto(BaseModel):
-    url: HttpUrl
-    is_primary: bool = False
-
-
-class VerificationRequest(BaseModel):
-    verification_method: str
-    verification_document: Optional[HttpUrl] = None
+    # If 'url' or 'verification_document' fields are needed,
+    # they should be added to ProfileBase or ProfileUpdate.
+    # Removed validators for non-existent fields 'url' and
+    # 'verification_document'.
 
 
 class Profile(ProfileBase):
     id: int
-    user_id: int
-    is_verified: bool
-    verification_status: VerificationStatus
-    verification_date: Optional[datetime] = None
-    verification_method: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True

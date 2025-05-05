@@ -16,11 +16,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# Function to create all tables
+
 def create_tables():
+    """Function to create all database tables"""
     Base.metadata.create_all(bind=engine)
 
+
 def get_db():
+    """Database session dependency for FastAPI endpoints"""
     db = SessionLocal()
     try:
         yield db

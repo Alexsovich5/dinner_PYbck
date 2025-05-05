@@ -1,5 +1,11 @@
 from fastapi import HTTPException, status
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from typing import Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class APIError(HTTPException):
@@ -28,7 +34,7 @@ class UnauthorizedError(APIError):
             detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
 
 class ForbiddenError(APIError):
     def __init__(self, detail: str = "Permission denied") -> None:
@@ -36,7 +42,7 @@ class ForbiddenError(APIError):
             status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
-class ValidationError(APIError):
+class CustomValidationError(APIError):
     def __init__(self, detail: str = "Validation error") -> None:
         super().__init__(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -50,3 +56,19 @@ class BadRequestError(APIError):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=detail
         )
+
+
+async def validation_error_handler(request: Request, exc: ValidationError):
+    """
+    Custom exception handler for Pydantic validation errors
+    Provides detailed information about validation failures
+    """
+    logger.error(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "detail": "Request validation error",
+            "errors": exc.errors(),
+            "help": "Check the data format in your request"
+        }
+    )

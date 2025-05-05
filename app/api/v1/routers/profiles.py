@@ -1,22 +1,24 @@
-from typing import Any, List
-
+from typing import Any
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.database import get_db
-from app.models.profile import Profile
+from app.models.profile import Profile, VerificationStatus
 from app.schemas.profile import (
     ProfileCreate,
     ProfileUpdate,
     Profile as ProfileSchema,
     ProfilePhoto,
-    VerificationRequest,
-    VerificationStatus
+    VerificationRequest
 )
 from app.api.v1.deps import get_current_user
 from app.models.user import User
 from app.services.storage import upload_file, delete_file
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Error messages
 PROFILE_NOT_FOUND = "Profile not found"
@@ -40,11 +42,32 @@ def create_profile(
             detail=PROFILE_EXISTS
         )
 
-    profile = Profile(**profile_in.dict(), user_id=current_user.id)
-    db.add(profile)
-    db.commit()
-    db.refresh(profile)
-    return profile
+    try:
+        # Convert profile data to dict and prepare for database
+        profile_data = profile_in.dict()
+        
+        # Ensure profile_photos is initialized correctly for JSON column
+        if profile_data.get('profile_photos') is None:
+            profile_data['profile_photos'] = []
+            
+        # Ensure favorite_cuisines is initialized correctly for JSON column
+        if profile_data.get('favorite_cuisines') is None:
+            profile_data['favorite_cuisines'] = []
+
+        # Create and save profile
+        profile = Profile(**profile_data, user_id=current_user.id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+        logger.info(f"Created profile for user: {current_user.id}")
+        return profile
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating profile: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating profile: {str(e)}"
+        )
 
 
 @router.get("/me", response_model=ProfileSchema)
@@ -118,26 +141,38 @@ async def upload_photo(
             detail=INVALID_FILE_TYPE
         )
     
-    # Check photo limit
-    current_photos = current_user.profile.profile_photos or []
-    if len(current_photos) >= 5:  # Maximum 5 photos per profile
+    try:
+        # Check photo limit - initialize empty list if None
+        current_photos = current_user.profile.profile_photos or []
+        if len(current_photos) >= 5:  # Maximum 5 photos per profile
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=MAX_PHOTOS_REACHED
+            )
+        
+        # Upload file and get URL
+        file_url = await upload_file(file, f"profiles/{current_user.id}")
+        
+        # Update profile - handle both list and None cases
+        photos = current_user.profile.profile_photos or []
+        photos.append(file_url)
+        current_user.profile.profile_photos = photos
+        
+        db.commit()
+        db.refresh(current_user.profile)
+        logger.info(f"Added photo for user: {current_user.id}")
+        
+        return ProfilePhoto(url=file_url)
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error uploading photo: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=MAX_PHOTOS_REACHED
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error uploading photo: {str(e)}"
         )
-    
-    # Upload file and get URL
-    file_url = await upload_file(file, f"profiles/{current_user.id}")
-    
-    # Update profile
-    photos = current_user.profile.profile_photos or []
-    photos.append(file_url)
-    current_user.profile.profile_photos = photos
-    
-    db.commit()
-    db.refresh(current_user.profile)
-    
-    return ProfilePhoto(url=file_url)
 
 
 @router.delete("/photos/{photo_url:path}")
@@ -153,22 +188,34 @@ async def delete_photo(
             detail=PROFILE_NOT_FOUND
         )
     
-    # Remove photo from profile
-    photos = current_user.profile.profile_photos or []
-    if photo_url not in photos:
+    try:
+        # Remove photo from profile - ensure it's a list
+        photos = current_user.profile.profile_photos or []
+        if photo_url not in photos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Photo not found"
+            )
+        
+        photos.remove(photo_url)
+        current_user.profile.profile_photos = photos
+        
+        # Delete from storage
+        await delete_file(photo_url)
+        
+        db.commit()
+        logger.info(f"Deleted photo for user: {current_user.id}")
+        return {"message": "Photo deleted successfully"}
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting photo: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Photo not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting photo: {str(e)}"
         )
-    
-    photos.remove(photo_url)
-    current_user.profile.profile_photos = photos
-    
-    # Delete from storage
-    await delete_file(photo_url)
-    
-    db.commit()
-    return {"message": "Photo deleted successfully"}
 
 
 @router.post("/verify", response_model=ProfileSchema)
@@ -189,7 +236,9 @@ async def request_verification(
     current_user.profile.verification_method = verification.verification_method
     
     if verification.verification_document:
-        current_user.profile.verification_document_url = verification.verification_document
+        current_user.profile.verification_document_url = (
+            verification.verification_document
+        )
     
     db.commit()
     db.refresh(current_user.profile)
