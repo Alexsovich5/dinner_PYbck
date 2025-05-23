@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +13,7 @@ from app.schemas.auth import User as UserSchema
 from app.api.v1.deps import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/me", response_model=UserSchema)
@@ -108,7 +110,7 @@ def get_potential_matches(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     skip: int = 0,
-    limit: int = 10
+    limit: int = 10,
 ) -> Any:
     """
     Get potential dinner matches for the current user.
@@ -122,7 +124,13 @@ def get_potential_matches(
         - Dietary restrictions compatibility (25%)
         - Match history success rate (20%)
     """
+    logger.info(
+        f"Getting potential matches for user_id: {current_user.id}"
+    )
     if not current_user.profile:
+        logger.warning(
+            f"User {current_user.id} has no profile. Returning empty list."
+        )
         return []
 
     matched_user_ids = _get_matched_user_ids(db, current_user.id)
@@ -162,7 +170,15 @@ def get_potential_matches(
 
     # Sort by compatibility score and paginate
     scored_matches.sort(key=lambda x: x[1], reverse=True)
-    return [match[0] for match in scored_matches[skip:skip + limit]]
+
+    result_users = [match[0] for match in scored_matches[skip:skip + limit]]
+    logger.info(
+        f"Found {len(result_users)} potential matches for user {current_user.id}."
+    )
+    if result_users:
+        returned_ids = [user.id for user in result_users]
+        logger.info(f"Returning matches with user_ids: {returned_ids[:20]}") # Log first 20
+    return result_users
 
 
 @router.get("/{user_id}", response_model=UserSchema)

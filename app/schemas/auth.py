@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+from app.schemas.profile import Profile
+
 
 class Token(BaseModel):
     access_token: str
@@ -23,6 +25,15 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+
+    class Config:
+        orm_mode = True
+
+
+class UserWithProfile(UserBase):
+    id: int
+    is_active: bool
+    profile: Optional[Profile] = None
 
     class Config:
         orm_mode = True
