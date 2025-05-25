@@ -1,5 +1,6 @@
-import pytest
+import pytest  # noqa: F401
 from fastapi import status
+
 
 def test_create_profile(client, test_user):
     """Test profile creation"""
@@ -20,6 +21,7 @@ def test_create_profile(client, test_user):
     assert data["bio"] == "I love food and meeting new people"
     assert data["cuisine_preferences"] == "Italian, French"
 
+
 def test_get_my_profile(client, test_user):
     """Test getting user's own profile"""
     response = client.get(
@@ -31,6 +33,7 @@ def test_get_my_profile(client, test_user):
     assert data["full_name"] == "Test User"
     assert data["bio"] == "Test bio"
     assert data["cuisine_preferences"] == "Italian, Japanese"
+
 
 def test_update_profile(client, test_user):
     """Test profile update"""
@@ -50,6 +53,7 @@ def test_update_profile(client, test_user):
     assert data["full_name"] == "Updated Name"
     assert data["bio"] == "Updated bio"
     assert data["cuisine_preferences"] == "Mexican, Thai"
+
 
 def test_get_profile_unauthorized(client):
     """Test accessing profile without authentication"""

@@ -1,6 +1,6 @@
-import pytest
 from fastapi import status
 from datetime import datetime
+
 
 def test_create_match(client, test_user, auth_headers):
     """Test creating a new match"""
@@ -15,6 +15,7 @@ def test_create_match(client, test_user, auth_headers):
     assert response.json()["restaurant_preference"] == "Italian"
     assert response.json()["status"] == "pending"
 
+
 def test_create_invalid_match(client, test_user, auth_headers):
     """Test creating a match with invalid data"""
     # Test self-match
@@ -26,6 +27,7 @@ def test_create_invalid_match(client, test_user, auth_headers):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "Cannot create a match with yourself"
 
+
 def test_get_matches(client, test_user, test_match, auth_headers):
     """Test retrieving matches"""
     # Test getting sent matches
@@ -36,6 +38,7 @@ def test_get_matches(client, test_user, test_match, auth_headers):
     # Test getting received matches
     response = client.get("/api/v1/matches/received", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
+
 
 def test_update_match(client, test_user, test_match, auth_headers):
     """Test updating a match status"""
@@ -51,6 +54,7 @@ def test_update_match(client, test_user, test_match, auth_headers):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["status"] == "accepted"
     assert response.json()["restaurant_preference"] == "Japanese"
+
 
 def test_update_invalid_match(client, test_user, test_match, auth_headers):
     """Test updating a match with invalid data"""

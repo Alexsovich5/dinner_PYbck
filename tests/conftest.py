@@ -1,4 +1,3 @@
-import os
 import pytest
 from typing import Generator, Dict
 from fastapi.testclient import TestClient
@@ -22,6 +21,7 @@ engine = create_engine(TEST_DATABASE_URL)
 # Create test SessionLocal class
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @pytest.fixture(scope="session")
 def test_db():
     """Create test database and tables"""
@@ -32,6 +32,7 @@ def test_db():
     Base.metadata.create_all(bind=engine)
     yield engine
     drop_database(TEST_DATABASE_URL)
+
 
 @pytest.fixture
 def db_session(test_db):
@@ -46,6 +47,7 @@ def db_session(test_db):
     transaction.rollback()
     connection.close()
 
+
 @pytest.fixture
 def client(db_session) -> Generator:
     """Create a test client with a test database session"""
@@ -59,6 +61,7 @@ def client(db_session) -> Generator:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
 
 @pytest.fixture
 def test_user(db_session) -> Dict[str, str]:
@@ -76,6 +79,7 @@ def test_user(db_session) -> Dict[str, str]:
     token = create_access_token({"sub": user.email})
     return {"user_id": user.id, "token": token}
 
+
 @pytest.fixture
 def test_profile(db_session, test_user) -> Profile:
     """Create a test profile"""
@@ -91,6 +95,7 @@ def test_profile(db_session, test_user) -> Profile:
     db_session.commit()
     db_session.refresh(profile)
     return profile
+
 
 @pytest.fixture
 def test_match(db_session, test_user) -> Match:
@@ -114,6 +119,7 @@ def test_match(db_session, test_user) -> Match:
     db_session.commit()
     db_session.refresh(match)
     return match
+
 
 @pytest.fixture
 def auth_headers(test_user) -> Dict[str, str]:

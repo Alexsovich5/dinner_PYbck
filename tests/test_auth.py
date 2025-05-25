@@ -1,5 +1,5 @@
-import pytest
 from fastapi import status
+
 
 def test_register_user(client):
     """Test user registration"""
@@ -17,6 +17,7 @@ def test_register_user(client):
     assert data["username"] == "newuser"
     assert "id" in data
 
+
 def test_login_user(client, test_user):
     """Test user login"""
     response = client.post(
@@ -31,6 +32,7 @@ def test_login_user(client, test_user):
     assert "access_token" in data
     assert data["token_type"] == "bearer"
 
+
 def test_login_wrong_password(client, test_user):
     """Test login with wrong password"""
     response = client.post(
@@ -41,6 +43,7 @@ def test_login_wrong_password(client, test_user):
         }
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
 
 def test_register_existing_email(client, test_user):
     """Test registration with existing email"""
