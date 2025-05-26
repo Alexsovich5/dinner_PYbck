@@ -17,8 +17,8 @@ def create_test_users(db: Session) -> List[User]:
                 "bio": "I love trying new restaurants and cuisines!",
                 "cuisine_preferences": "Italian, Japanese, Thai",
                 "dietary_restrictions": "None",
-                "location": "New York"
-            }
+                "location": "New York",
+            },
         },
         {
             "email": "test2@example.com",
@@ -29,8 +29,8 @@ def create_test_users(db: Session) -> List[User]:
                 "bio": "Foodie looking for dinner companions",
                 "cuisine_preferences": "Mexican, Indian, French",
                 "dietary_restrictions": "Vegetarian",
-                "location": "New York"
-            }
+                "location": "New York",
+            },
         },
         {
             "email": "test3@example.com",
@@ -41,9 +41,9 @@ def create_test_users(db: Session) -> List[User]:
                 "bio": "Chef who loves to explore new restaurants",
                 "cuisine_preferences": "French, Mediterranean, Korean",
                 "dietary_restrictions": "None",
-                "location": "New York"
-            }
-        }
+                "location": "New York",
+            },
+        },
     ]
 
     created_users = []
@@ -56,17 +56,14 @@ def create_test_users(db: Session) -> List[User]:
                 email=user_data["email"],
                 username=user_data["username"],
                 hashed_password=get_password_hash(user_data["password"]),
-                is_active=True
+                is_active=True,
             )
             db.add(user)
             db.commit()
             db.refresh(user)
 
             # Create profile
-            profile = Profile(
-                user_id=user.id,
-                **user_data["profile"]
-            )
+            profile = Profile(user_id=user.id, **user_data["profile"])
             db.add(profile)
             db.commit()
             db.refresh(profile)

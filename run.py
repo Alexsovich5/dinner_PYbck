@@ -6,7 +6,7 @@ from app.db.init_db import init_db
 def main():
     # Create all database tables first
     create_tables()
-    
+
     # Initialize database with test data
     db = SessionLocal()
     try:
@@ -20,7 +20,7 @@ def main():
         host="0.0.0.0",
         port=5001,  # Using port 5001 instead of 5000 to avoid conflicts
         reload=True,
-        log_level="info"
+        log_level="info",
     )
 
 

@@ -12,8 +12,8 @@ def test_create_profile(client, test_user):
             "bio": "I love food and meeting new people",
             "cuisine_preferences": "Italian, French",
             "dietary_restrictions": "Vegetarian",
-            "location": "New York"
-        }
+            "location": "New York",
+        },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -26,7 +26,7 @@ def test_get_my_profile(client, test_user):
     """Test getting user's own profile"""
     response = client.get(
         "/api/v1/profiles/me",
-        headers={"Authorization": f"Bearer {test_user['access_token']}"}
+        headers={"Authorization": f"Bearer {test_user['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -45,8 +45,8 @@ def test_update_profile(client, test_user):
             "bio": "Updated bio",
             "cuisine_preferences": "Mexican, Thai",
             "dietary_restrictions": "None",
-            "location": "Updated City"
-        }
+            "location": "Updated City",
+        },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

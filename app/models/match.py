@@ -19,20 +19,12 @@ class Match(Base):
     receiver_id = Column(Integer, ForeignKey("users.id"))
     status = Column(String, default=MatchStatus.PENDING)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     sender = relationship(
-        "User",
-        foreign_keys=[sender_id],
-        back_populates="sent_matches"
+        "User", foreign_keys=[sender_id], back_populates="sent_matches"
     )
     receiver = relationship(
-        "User",
-        foreign_keys=[receiver_id],
-        back_populates="received_matches"
+        "User", foreign_keys=[receiver_id], back_populates="received_matches"
     )

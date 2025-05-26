@@ -57,7 +57,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
         logger.error(f"Error creating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating user account"
+            detail="Error creating user account",
         )
 
 
@@ -73,10 +73,7 @@ def login(
     """
     # Log login attempt (without password)
     client_host = request.client.host if request else "unknown"
-    logger.info(
-        f"Login attempt for user: {form_data.username} "
-        f"from {client_host}"
-    )
+    logger.info(f"Login attempt for user: {form_data.username} " f"from {client_host}")
 
     # First try to find user by email
     # (since form_data.username field is used for both)
@@ -84,14 +81,10 @@ def login(
 
     # If not found by email, try username
     if not user:
-        user = db.query(User).filter(
-            User.username == form_data.username
-        ).first()
+        user = db.query(User).filter(User.username == form_data.username).first()
 
     # Verify credentials
-    if not user or not verify_password(
-        form_data.password, user.hashed_password
-    ):
+    if not user or not verify_password(form_data.password, user.hashed_password):
         logger.warning(f"Failed login attempt for: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -102,8 +95,7 @@ def login(
     # Generate access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
 
     logger.info(f"Successful login for user: {user.email}")

@@ -7,8 +7,7 @@ import os
 load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres@localhost/dinner_app"
+    "DATABASE_URL", "postgresql://postgres@localhost/dinner_app"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

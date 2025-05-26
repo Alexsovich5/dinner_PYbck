@@ -8,8 +8,8 @@ def test_register_user(client):
         json={
             "email": "newuser@example.com",
             "username": "newuser",
-            "password": "testpassword123"
-        }
+            "password": "testpassword123",
+        },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -22,10 +22,7 @@ def test_login_user(client, test_user):
     """Test user login"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user["email"],
-            "password": test_user["password"]
-        }
+        data={"username": test_user["email"], "password": test_user["password"]},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -37,10 +34,7 @@ def test_login_wrong_password(client, test_user):
     """Test login with wrong password"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user["email"],
-            "password": "wrongpassword"
-        }
+        data={"username": test_user["email"], "password": "wrongpassword"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -52,7 +46,7 @@ def test_register_existing_email(client, test_user):
         json={
             "email": test_user["email"],
             "username": "differentuser",
-            "password": "testpassword123"
-        }
+            "password": "testpassword123",
+        },
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST

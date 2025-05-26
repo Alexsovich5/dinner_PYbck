@@ -38,24 +38,19 @@ class UnauthorizedError(APIError):
 
 class ForbiddenError(APIError):
     def __init__(self, detail: str = "Permission denied") -> None:
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 class CustomValidationError(APIError):
     def __init__(self, detail: str = "Validation error") -> None:
         super().__init__(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=detail
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail
         )
 
 
 class BadRequestError(APIError):
     def __init__(self, detail: str = "Bad request") -> None:
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail
-        )
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
 async def validation_error_handler(request: Request, exc: ValidationError):
@@ -69,6 +64,6 @@ async def validation_error_handler(request: Request, exc: ValidationError):
         content={
             "detail": "Request validation error",
             "errors": exc.errors(),
-            "help": "Check the data format in your request"
-        }
+            "help": "Check the data format in your request",
+        },
     )

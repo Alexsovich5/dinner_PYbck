@@ -27,7 +27,7 @@ def test_db():
     """Create test database and tables"""
     if database_exists(TEST_DATABASE_URL):
         drop_database(TEST_DATABASE_URL)
-    
+
     create_database(TEST_DATABASE_URL)
     Base.metadata.create_all(bind=engine)
     yield engine
@@ -51,6 +51,7 @@ def db_session(test_db):
 @pytest.fixture
 def client(db_session) -> Generator:
     """Create a test client with a test database session"""
+
     def override_get_db():
         try:
             yield db_session
@@ -70,12 +71,12 @@ def test_user(db_session) -> Dict[str, str]:
         email="test@example.com",
         username="testuser",
         hashed_password=get_password_hash("testpassword"),
-        is_active=True
+        is_active=True,
     )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     token = create_access_token({"sub": user.email})
     return {"user_id": user.id, "token": token}
 
@@ -89,7 +90,7 @@ def test_profile(db_session, test_user) -> Profile:
         bio="Test bio",
         cuisine_preferences="Italian, Japanese",
         dietary_restrictions="None",
-        location="New York"
+        location="New York",
     )
     db_session.add(profile)
     db_session.commit()
@@ -104,16 +105,16 @@ def test_match(db_session, test_user) -> Match:
         email="recipient@example.com",
         username="recipient",
         hashed_password=get_password_hash("testpassword"),
-        is_active=True
+        is_active=True,
     )
     db_session.add(recipient)
     db_session.commit()
-    
+
     match = Match(
         sender_id=test_user["user_id"],
         receiver_id=recipient.id,
         status=MatchStatus.PENDING,
-        restaurant_preference="Italian"
+        restaurant_preference="Italian",
     )
     db_session.add(match)
     db_session.commit()

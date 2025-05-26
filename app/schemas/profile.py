@@ -17,15 +17,15 @@ class ProfileBase(BaseModel):
     full_name: Optional[str] = None
     bio: Optional[str] = None
     location: Optional[str] = None
-    
+
     # Photo fields - make URLs more flexible by accepting strings
     avatar_url: Optional[Union[HttpUrl, str]] = None
     profile_photos: Optional[List[Union[HttpUrl, str]]] = None
-    
+
     # Basic preferences
     cuisine_preferences: Optional[str] = None
     dietary_restrictions: Optional[str] = None
-    
+
     # Enhanced preferences
     cooking_level: Optional[str] = None
     preferred_dining_time: Optional[str] = None
@@ -35,17 +35,15 @@ class ProfileBase(BaseModel):
     special_diets: Optional[str] = None
 
     # Validators to handle string URLs
-    @validator('avatar_url', pre=True)
+    @validator("avatar_url", pre=True)
     def validate_avatar_url(cls, v):
-        if isinstance(v, str) and v and \
-           not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
+        if isinstance(v, str) and v and not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
             return f"{HTTPS_PREFIX}{v}"
         return v
-    
-    @validator('profile_photos', each_item=True, pre=True)
+
+    @validator("profile_photos", each_item=True, pre=True)
     def validate_profile_photos(cls, v):
-        if isinstance(v, str) and v and \
-           not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
+        if isinstance(v, str) and v and not v.startswith((HTTP_PREFIX, HTTPS_PREFIX)):
             return f"{HTTPS_PREFIX}{v}"
         return v
 

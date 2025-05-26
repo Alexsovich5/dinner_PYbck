@@ -24,32 +24,33 @@ router = APIRouter(prefix="/matches", tags=["matches"])
 def create_match(
     match_in: MatchCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """Create a new dinner match request."""
     if match_in.recipient_id == current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=INVALID_MATCH
+            status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_MATCH
         )
 
     recipient = db.query(User).filter(User.id == match_in.recipient_id).first()
     if not recipient:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=RECIPIENT_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail=RECIPIENT_NOT_FOUND
         )
 
-    existing_match = db.query(Match).filter(
-        Match.sender_id == current_user.id,
-        Match.receiver_id == match_in.recipient_id,
-        Match.status == MatchStatus.PENDING
-    ).first()
+    existing_match = (
+        db.query(Match)
+        .filter(
+            Match.sender_id == current_user.id,
+            Match.receiver_id == match_in.recipient_id,
+            Match.status == MatchStatus.PENDING,
+        )
+        .first()
+    )
 
     if existing_match:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=MATCH_EXISTS
+            status_code=status.HTTP_400_BAD_REQUEST, detail=MATCH_EXISTS
         )
 
     match = Match(
@@ -57,7 +58,7 @@ def create_match(
         receiver_id=match_in.recipient_id,
         restaurant_preference=match_in.restaurant_preference,
         proposed_date=match_in.proposed_date,
-        status=MatchStatus.PENDING
+        status=MatchStatus.PENDING,
     )
     db.add(match)
     db.commit()
@@ -67,8 +68,7 @@ def create_match(
 
 @router.get("/sent", response_model=List[MatchSchema])
 def get_sent_matches(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get all matches sent by the current user."""
     return db.query(Match).filter(Match.sender_id == current_user.id).all()
@@ -76,8 +76,7 @@ def get_sent_matches(
 
 @router.get("/received", response_model=List[MatchSchema])
 def get_received_matches(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get all matches received by the current user."""
     return db.query(Match).filter(Match.receiver_id == current_user.id).all()
@@ -88,26 +87,23 @@ def update_match(
     match_id: int,
     match_in: MatchUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """Update a match (accept/reject and update details)."""
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=MATCH_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail=MATCH_NOT_FOUND
         )
 
     if match.receiver_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=NOT_AUTHORIZED
+            status_code=status.HTTP_403_FORBIDDEN, detail=NOT_AUTHORIZED
         )
 
     if match.status != MatchStatus.PENDING:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=INVALID_UPDATE
+            status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_UPDATE
         )
 
     for field, value in match_in.dict(exclude_unset=True).items():

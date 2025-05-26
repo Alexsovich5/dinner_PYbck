@@ -15,6 +15,7 @@ SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@localhost/test_dinner_
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @pytest.fixture(scope="session")
 def db() -> Generator:
     Base.metadata.create_all(bind=engine)
@@ -25,22 +26,25 @@ def db() -> Generator:
         db.close()
         Base.metadata.drop_all(bind=engine)
 
+
 @pytest.fixture(scope="module")
 def client() -> Generator:
     with TestClient(app) as c:
         yield c
+
 
 @pytest.fixture(scope="module")
 def test_user(db: TestingSessionLocal) -> User:
     user = User(
         email="test@example.com",
         username="testuser",
-        hashed_password="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdCGfwX2UzyFg2."  # password = test123
+        hashed_password="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdCGfwX2UzyFg2.",  # password = test123
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
 
 @pytest.fixture(scope="module")
 def test_user_token(test_user: User) -> str:

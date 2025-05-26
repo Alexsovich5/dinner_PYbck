@@ -22,14 +22,14 @@ load_dotenv()
 app = FastAPI(
     title="Dinner App API",
     description="API for matching dinner companions",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Configure CORS - update to include common frontend development ports
 origins = os.getenv(
     "CORS_ORIGINS",
     "http://localhost:3000,http://localhost:4200,http://localhost:8080,"
-    "http://localhost:5173"
+    "http://localhost:5173",
 ).split(",")
 
 # Try to create database tables
@@ -46,7 +46,7 @@ v1_app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # Include routers in v1_app
@@ -87,10 +87,7 @@ async def root():
         "status": "ok",
         "message": "Welcome to the Dinner App API",
         "version": "1.0.0",
-        "documentation": {
-            "api_v1_docs": "/api/v1/docs",
-            "api_docs": "/api/docs"
-        }
+        "documentation": {"api_v1_docs": "/api/v1/docs", "api_docs": "/api/docs"},
     }
 
 
@@ -101,14 +98,7 @@ async def health_check():
     """
     try:
         # You could add a simple database ping here
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "api_version": "1.0.0"
-        }
+        return {"status": "healthy", "database": "connected", "api_version": "1.0.0"}
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        return {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        return {"status": "unhealthy", "error": str(e)}
