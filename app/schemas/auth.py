@@ -7,6 +7,12 @@ class Token(BaseModel):
     token_type: str
 
 
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: "User"
+
+
 class TokenData(BaseModel):
     email: Optional[str] = None
 
@@ -31,6 +37,18 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    is_profile_complete: bool = False
+    bio: Optional[str] = None
+    interests: Optional[List[str]] = None
+    dietary_preferences: Optional[List[str]] = None
+    location: Optional[str] = None
+    profile_picture: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         orm_mode = True

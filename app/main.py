@@ -27,7 +27,7 @@ app = FastAPI(
 
 # Configure CORS - updated for Angular frontend
 origins = [
-    "http://localhost:4200",  # Angular dev server
+    "http://localhost:4200",  # Angular dev server default
     "http://localhost:5001",  # Angular dev server (alternate port)
     "http://localhost:3000",  # React dev server (if needed)
     "http://localhost:8080",  # Vue dev server (if needed)

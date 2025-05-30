@@ -14,7 +14,7 @@ from app.core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 from app.models.user import User
-from app.schemas.auth import UserCreate, Token, User as UserSchema
+from app.schemas.auth import UserCreate, Token, LoginResponse, User as UserSchema
 from app.api.v1.deps import get_current_user
 
 # Configure logging
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"])
 
 
-@router.post("/register", response_model=UserSchema)
+@router.post("/register", response_model=LoginResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
-    """Register a new user."""
+    """Register a new user and return login response."""
     try:
         # Check if user exists by email
         existing_user = db.query(User).filter(User.email == user_in.email).first()
@@ -55,16 +55,24 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
                 detail="Password must be at least 6 characters long",
             )
 
-        # Create new user with simplified approach
+        # Create new user with enhanced fields
         logger.info(f"Creating new user: {user_in.email}")
         hashed_password = get_password_hash(user_in.password)
 
-        # Only use fields that exist in User model
+        # Create user with all provided fields
         new_user = User(
             email=user_in.email,
             username=user_in.username,
             hashed_password=hashed_password,
             is_active=True,
+            first_name=user_in.first_name,
+            last_name=user_in.last_name,
+            date_of_birth=user_in.date_of_birth,
+            gender=user_in.gender,
+            location=user_in.location,
+            dietary_preferences=user_in.dietary_preferences or [],
+            interests=user_in.cuisine_preferences or [],
+            is_profile_complete=False,
         )
 
         # Use a single transaction
@@ -72,8 +80,18 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
         db.commit()
         db.refresh(new_user)
 
+        # Generate access token for immediate login
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": new_user.email}, expires_delta=access_token_expires
+        )
+
         logger.info(f"Successfully created user: {new_user.email}")
-        return new_user
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=new_user
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -85,7 +103,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
         )
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
@@ -93,7 +111,7 @@ def login(
 ) -> Any:
     """
     OAuth2 compatible token login.
-    Get an access token for future requests.
+    Get an access token and user data for future requests.
     """
     # Log login attempt (without password)
     client_host = request.client.host if request else "unknown"
@@ -138,7 +156,11 @@ def login(
     )
 
     logger.info(f"Successful login for user: {user.email}")
-    return {"access_token": access_token, "token_type": "bearer"}
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=user
+    )
 
 
 @router.get("/me", response_model=UserSchema)
