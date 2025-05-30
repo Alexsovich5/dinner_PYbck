@@ -25,12 +25,37 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS - update to include common frontend development ports
-origins = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:4200,http://localhost:8080,"
-    "http://localhost:5173",
-).split(",")
+# Configure CORS - updated for Angular frontend
+origins = [
+    "http://localhost:4200",  # Angular dev server
+    "http://localhost:5001",  # Angular dev server (alternate port)
+    "http://localhost:3000",  # React dev server (if needed)
+    "http://localhost:8080",  # Vue dev server (if needed)
+    "http://localhost:5173",  # Vite dev server (if needed)
+]
+
+# Add environment variable override
+env_origins = os.getenv("CORS_ORIGINS")
+if env_origins:
+    origins.extend(env_origins.split(","))
+
+# Add CORS middleware with proper configuration for Angular
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,  # Enable credentials for Angular
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+    ],
+    expose_headers=["*"],
+    max_age=600,  # Cache preflight requests for 10 minutes
+)
 
 # Try to create database tables
 try:
@@ -55,20 +80,14 @@ v1_app.include_router(users.router, prefix="/users", tags=["users"])
 v1_app.include_router(profiles.router, prefix="/profiles", tags=["profiles"])
 v1_app.include_router(matches.router, prefix="/matches", tags=["matches"])
 
+# Add profile aliases for Angular compatibility
+v1_app.include_router(profiles.router, prefix="/profile", tags=["profile-alias"])
+
 # Mount the v1 API with prefix
 app.mount("/api/v1", v1_app)
 
 # Create a second mount for the non-v1 path to support the Angular app
 app.mount("/api", v1_app)
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Add logging middleware
 app.middleware("http")(log_requests_middleware)
@@ -87,7 +106,10 @@ async def root():
         "status": "ok",
         "message": "Welcome to the Dinner App API",
         "version": "1.0.0",
-        "documentation": {"api_v1_docs": "/api/v1/docs", "api_docs": "/api/docs"},
+        "documentation": {
+            "api_v1_docs": "/api/v1/docs",
+            "api_docs": "/api/docs",
+        },
     }
 
 
@@ -98,7 +120,11 @@ async def health_check():
     """
     try:
         # You could add a simple database ping here
-        return {"status": "healthy", "database": "connected", "api_version": "1.0.0"}
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "api_version": "1.0.0",
+        }
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return {"status": "unhealthy", "error": str(e)}

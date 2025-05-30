@@ -21,8 +21,8 @@ class User(Base):
     )
     profile = relationship("Profile", uselist=False, back_populates="user")
     sent_matches = relationship(
-        "Match", back_populates="sender", foreign_keys="Match.sender_id"
+        "Match", back_populates="sender", foreign_keys="[Match.sender_id]"
     )
     received_matches = relationship(
-        "Match", back_populates="receiver", foreign_keys="Match.receiver_id"
+        "Match", back_populates="receiver", foreign_keys="[Match.receiver_id]"
     )

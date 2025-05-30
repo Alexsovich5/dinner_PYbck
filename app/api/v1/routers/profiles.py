@@ -26,10 +26,10 @@ PROFILE_EXISTS = "Profile already exists for this user"
 INVALID_FILE_TYPE = "Invalid file type. Only images are allowed"
 MAX_PHOTOS_REACHED = "Maximum number of photos reached"
 
-router = APIRouter(prefix="/profiles", tags=["profiles"])
+router = APIRouter(tags=["profiles"])
 
 
-@router.post("", response_model=ProfileSchema)
+@router.post("/", response_model=ProfileSchema)
 def create_profile(
     profile_in: ProfileCreate,
     db: Session = Depends(get_db),
@@ -69,6 +69,7 @@ def create_profile(
         )
 
 
+@router.get("/", response_model=ProfileSchema)
 @router.get("/me", response_model=ProfileSchema)
 def get_my_profile(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
@@ -81,6 +82,7 @@ def get_my_profile(
     return current_user.profile
 
 
+@router.put("/", response_model=ProfileSchema)
 @router.put("/me", response_model=ProfileSchema)
 def update_my_profile(
     profile_in: ProfileUpdate,
@@ -242,7 +244,8 @@ async def approve_verification(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """Approve a user's verification request (admin only)."""
-    # TODO: Add admin check
+    # Admin check should be implemented here
+    # For now, allowing any authenticated user to approve verification
 
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if not profile:

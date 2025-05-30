@@ -18,6 +18,8 @@ class Match(Base):
     sender_id = Column(Integer, ForeignKey("users.id"))
     receiver_id = Column(Integer, ForeignKey("users.id"))
     status = Column(String, default=MatchStatus.PENDING)
+    restaurant_preference = Column(String, nullable=True)
+    proposed_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -1,18 +1,26 @@
 import uvicorn
-from app.core.database import SessionLocal, create_tables
-from app.db.init_db import init_db
+from app.core.database import create_tables
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main():
-    # Create all database tables first
-    create_tables()
-
-    # Initialize database with test data
-    db = SessionLocal()
     try:
-        init_db(db)
-    finally:
-        db.close()
+        # Create all database tables first
+        logger.info("Creating database tables...")
+        create_tables()
+        logger.info("Database tables created successfully")
+
+        # Skip database initialization during startup to avoid hanging
+        # Test data can be created via API endpoints instead
+        logger.info("Starting FastAPI server...")
+
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}")
+        raise
 
     # Run the application
     uvicorn.run(

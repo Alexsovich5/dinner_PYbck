@@ -1,8 +1,11 @@
 import os
 import boto3
+import logging
 from fastapi import UploadFile
 from botocore.exceptions import ClientError
-from typing import Optional
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Initialize S3 client
 s3_client = boto3.client(
@@ -29,7 +32,7 @@ async def upload_file(file: UploadFile, path: str) -> str:
         # Return public URL
         return f"https://{BUCKET_NAME}.s3.amazonaws.com/{filename}"
     except ClientError as e:
-        print(f"Error uploading file: {e}")
+        logger.error(f"Error uploading file: {e}")
         raise
 
 
@@ -43,5 +46,5 @@ async def delete_file(file_url: str) -> bool:
         await s3_client.delete_object(Bucket=BUCKET_NAME, Key=key)
         return True
     except ClientError as e:
-        print(f"Error deleting file: {e}")
+        logger.error(f"Error deleting file: {e}")
         raise

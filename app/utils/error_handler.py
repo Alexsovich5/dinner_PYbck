@@ -59,11 +59,26 @@ async def validation_error_handler(request: Request, exc: ValidationError):
     Provides detailed information about validation failures
     """
     logger.error(f"Validation error: {exc.errors()}")
+
+    # Simplified error response format that Angular can easily parse
+    error_details = []
+    for error in exc.errors():
+        field_path = " -> ".join(str(loc) for loc in error["loc"])
+        error_details.append(
+            {"field": field_path, "message": error["msg"], "type": error["type"]}
+        )
+
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "detail": "Request validation error",
-            "errors": exc.errors(),
-            "help": "Check the data format in your request",
+            "detail": error_details,
+            "message": "Validation failed",
+            "type": "validation_error",
+        },
+        headers={
+            # Ensure CORS headers on error responses
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type",
         },
     )

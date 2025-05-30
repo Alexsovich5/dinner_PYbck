@@ -5,7 +5,6 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
 import logging
-from fastapi.security import OAuth2PasswordBearer
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -25,22 +24,13 @@ ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 # Default to 24 hours
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
-# Create password context for hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Configure OAuth2 password bearer with correct token URL
-# The leading slash is important here
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    """Generate a password hash."""
-    return pwd_context.hash(password)
+# Create password context for hashing with optimized rounds
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    # Reduced from default 12 for faster hashing in development
+    bcrypt__rounds=4,
+)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
