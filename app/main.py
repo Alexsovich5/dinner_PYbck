@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 import os
 import logging
+from pathlib import Path
 from pydantic import ValidationError
 
 from app.api.v1.routers import auth, matches, profiles, users
@@ -95,6 +97,11 @@ app.middleware("http")(log_requests_middleware)
 # Register validation error handlers
 app.add_exception_handler(ValidationError, validation_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
+
+# Create uploads directory and mount static files
+uploads_dir = Path("uploads")
+uploads_dir.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/")

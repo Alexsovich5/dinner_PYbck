@@ -57,3 +57,14 @@ class User(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserProfileUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    bio: Optional[str] = None
+    interests: Optional[List[str]] = None
+    dietary_preferences: Optional[List[str]] = None

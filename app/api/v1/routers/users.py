@@ -1,6 +1,9 @@
 from typing import Any, List
+import os
+import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session
 
@@ -8,7 +11,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.profile import Profile
 from app.models.match import Match, MatchStatus  # Added MatchStatus import
-from app.schemas.auth import User as UserSchema
+from app.schemas.auth import User as UserSchema, UserProfileUpdate
 from app.api.v1.deps import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -18,6 +21,124 @@ router = APIRouter(prefix="/users", tags=["users"])
 def get_current_user_info(current_user: User = Depends(get_current_user)) -> Any:
     """Get current user information."""
     return current_user
+
+
+@router.put("/me", response_model=UserSchema)
+def update_current_user_profile(
+    profile_update: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Update current user profile information."""
+    
+    # Update user fields
+    update_data = profile_update.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        if hasattr(current_user, field):
+            setattr(current_user, field, value)
+    
+    # Auto-calculate profile completion
+    current_user.is_profile_complete = _calculate_profile_completeness(current_user)
+    
+    # Save to database
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+
+def _calculate_profile_completeness(user: User) -> bool:
+    """Calculate if user profile is complete enough for matching."""
+    required_fields = [
+        user.first_name,
+        user.last_name,
+        user.date_of_birth,
+        user.gender,
+        user.location,
+    ]
+    
+    # Check if all required fields are filled
+    if not all(field for field in required_fields):
+        return False
+    
+    # Check if at least some optional fields are filled
+    optional_score = 0
+    if user.bio:
+        optional_score += 1
+    if user.interests and len(user.interests) > 0:
+        optional_score += 1
+    if user.dietary_preferences and len(user.dietary_preferences) > 0:
+        optional_score += 1
+    
+    # Profile is complete if required fields + at least 1 optional field
+    return optional_score >= 1
+
+
+@router.post("/me/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Upload profile picture for current user."""
+    
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image"
+        )
+    
+    # Validate file size (5MB limit)
+    max_size = 5 * 1024 * 1024  # 5MB
+    file_content = await file.read()
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size must be less than 5MB"
+        )
+    
+    # Reset file pointer
+    await file.seek(0)
+    
+    # Create upload directory if it doesn't exist
+    upload_dir = Path("uploads/profile_pictures")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    file_extension = Path(file.filename).suffix if file.filename else '.jpg'
+    unique_filename = f"{current_user.id}_{uuid.uuid4().hex}{file_extension}"
+    file_path = upload_dir / unique_filename
+    
+    # Save file
+    try:
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Update user profile picture URL
+        profile_picture_url = f"/uploads/profile_pictures/{unique_filename}"
+        current_user.profile_picture = profile_picture_url
+        
+        # Update profile completeness
+        current_user.is_profile_complete = _calculate_profile_completeness(current_user)
+        
+        db.add(current_user)
+        db.commit()
+        db.refresh(current_user)
+        
+        return {
+            "message": "Profile picture uploaded successfully",
+            "profile_picture_url": profile_picture_url
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file: {str(e)}"
+        )
 
 
 def _calculate_cuisine_score(user_preferences: str, match_preferences: str) -> float:
